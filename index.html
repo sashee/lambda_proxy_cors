@@ -1,0 +1,37 @@
+<script>
+	const refreshWhoAmI = () => {
+		fetch("${BACKEND_URL}/whoami", {credentials: "include"})
+			.then((res) => res.text())
+			.then((res) => {
+				document.querySelector("#iam").innerText = res
+				if (res.indexOf("Logged in") !== -1) {
+					document.querySelector("#login").disabled = true;
+					document.querySelector("#logout").disabled = false;
+				}else {
+					document.querySelector("#login").disabled = false;
+					document.querySelector("#logout").disabled = true;
+				}
+			});
+	}
+	refreshWhoAmI();
+	function login() {
+		document.querySelector("#login").disabled = true;
+		document.querySelector("#logout").disabled = true;
+		fetch("${BACKEND_URL}/login", {credentials: "include"})
+			.then((res) => {
+				refreshWhoAmI();
+			});
+	}
+	function logout() {
+		document.querySelector("#login").disabled = true;
+		document.querySelector("#logout").disabled = true;
+		fetch("${BACKEND_URL}/logout", {credentials: "include"})
+			.then((res) => {
+				refreshWhoAmI();
+			});
+	}
+</script>
+<div id="iam"></div>
+<button id="login" onclick="login()" disabled>Log in as Bob</button>
+<button id="logout" onclick="logout()" disabled>Log out</button>
+
