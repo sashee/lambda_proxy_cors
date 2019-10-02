@@ -8,24 +8,24 @@ resource "random_id" "id" {
 # frontend
 
 resource "aws_s3_bucket" "frontend_bucket" {
-	force_destroy = "true"
-	website {
-		index_document = "index.html"
-	}
+  force_destroy = "true"
+  website {
+    index_document = "index.html"
+  }
 }
 
 resource "aws_s3_bucket_object" "indexhtml" {
-  key    = "index.html"
-  bucket = aws_s3_bucket.frontend_bucket.bucket
-	content_type = "text/html"
-	content = templatefile("index.html", { BACKEND_URL = aws_api_gateway_deployment.deployment.invoke_url })
+  key          = "index.html"
+  bucket       = aws_s3_bucket.frontend_bucket.bucket
+  content_type = "text/html"
+  content      = templatefile("index.html", { BACKEND_URL = aws_api_gateway_deployment.deployment.invoke_url })
 }
 
 # API
 
 data "archive_file" "lambda_zip" {
-	type = "zip"
-	output_path = "/tmp/lambda.zip"
+  type        = "zip"
+  output_path = "/tmp/lambda.zip"
   source {
     content  = file("main.js")
     filename = "main.js"
@@ -33,20 +33,20 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_lambda_function" "lambda" {
-	function_name = "${random_id.id.hex}-function"
+  function_name = "${random_id.id.hex}-function"
 
-  filename = "${data.archive_file.lambda_zip.output_path}"
+  filename         = "${data.archive_file.lambda_zip.output_path}"
   source_code_hash = "${data.archive_file.lambda_zip.output_base64sha256}"
 
-  handler = "main.handler"
-  runtime = "nodejs10.x"
-  role = "${aws_iam_role.lambda_exec.arn}"
-	reserved_concurrent_executions = 4
-	environment {
-		variables = {
-			ALLOWED_ORIGINS = join(" ", ["http://${aws_s3_bucket.frontend_bucket.website_endpoint}"])
-		}
-	}
+  handler                        = "main.handler"
+  runtime                        = "nodejs10.x"
+  role                           = "${aws_iam_role.lambda_exec.arn}"
+  reserved_concurrent_executions = 4
+  environment {
+    variables = {
+      ALLOWED_ORIGINS = join(" ", ["http://${aws_s3_bucket.frontend_bucket.website_endpoint}"])
+    }
+  }
 }
 
 # Boilerplates to wire everything together
@@ -74,26 +74,26 @@ data "aws_iam_policy_document" "default" {
 # api boilerplate
 
 data "aws_iam_policy_document" "lambda_exec_role_policy" {
-	statement {
-		sid = "1"
-		actions = [
-			"logs:CreateLogGroup",
-			"logs:CreateLogStream",
-			"logs:PutLogEvents"
-		]
-		resources = [
-			"arn:aws:logs:*:*:*"
-		]
-	}
+  statement {
+    sid = "1"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      "arn:aws:logs:*:*:*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "lambda_exec_role" {
-	role = "${aws_iam_role.lambda_exec.id}"
-	policy = "${data.aws_iam_policy_document.lambda_exec_role_policy.json}"
+  role   = "${aws_iam_role.lambda_exec.id}"
+  policy = "${data.aws_iam_policy_document.lambda_exec_role_policy.json}"
 }
 
 resource "aws_iam_role" "lambda_exec" {
-	assume_role_policy = <<EOF
+  assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -112,7 +112,7 @@ EOF
 # api gw
 
 resource "aws_api_gateway_rest_api" "rest_api" {
-	name = "cf-signer-${random_id.id.hex}-rest-api"
+  name = "cf-signer-${random_id.id.hex}-rest-api"
   endpoint_configuration {
     types = ["REGIONAL"]
   }
